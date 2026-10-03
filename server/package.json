@@ -1,0 +1,19 @@
+{
+  "name": "dsops-acquisition-api",
+  "private": true,
+  "version": "0.1.0",
+  "description": "Project acquisition & requirements gathering API — business support system for DSOPS. Nexular Technologies.",
+  "type": "module",
+  "main": "src/server.js",
+  "scripts": {
+    "start": "node src/server.js",
+    "dev": "node --watch src/server.js",
+    "seed": "node src/seed.js"
+  },
+  "dependencies": {
+    "better-sqlite3": "^11.5.0",
+    "cors": "^2.8.5",
+    "express": "^4.21.1",
+    "multer": "^2.4.0"
+  }
+}

@@ -1,0 +1,26 @@
+# Local deployment: acquisition API + dashboard UI.
+#   docker compose up --build   ->  UI on http://localhost:8080, API on http://localhost:4000
+services:
+  acquisition-api:
+    build: ./server
+    container_name: dsops-acquisition-api
+    environment:
+      PORT: "4000"
+      DATA_DIR: /data
+    volumes:
+      - acquisition-data:/data
+    ports:
+      - "4000:4000"
+    restart: unless-stopped
+
+  web:
+    build: .
+    container_name: dsops-web
+    depends_on:
+      - acquisition-api
+    ports:
+      - "8080:80"
+    restart: unless-stopped
+
+volumes:
+  acquisition-data:

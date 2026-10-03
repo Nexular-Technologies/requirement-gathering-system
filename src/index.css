@@ -1,0 +1,76 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --background: 210 20% 96%;
+  --foreground: 214 30% 14%;
+  --card: 0 0% 100%;
+  --card-foreground: 214 30% 14%;
+  --muted: 213 24% 95%;
+  --muted-foreground: 213 12% 42%;
+  --accent: 213 40% 93%;
+  --accent-foreground: 214 40% 20%;
+  --border: 214 20% 88%;
+  --input: 214 20% 88%;
+  --ring: 213 45% 45%;
+  --primary: 213 45% 45%;
+  --primary-foreground: 0 0% 100%;
+  --secondary: 213 24% 93%;
+  --secondary-foreground: 214 40% 20%;
+
+  --good: 149 50% 37%;
+  --warn: 38 76% 45%;
+  --crit: 4 55% 50%;
+  --radius: 0.7rem;
+}
+
+.dark {
+  --background: 213 30% 8%;
+  --foreground: 210 30% 93%;
+  --card: 213 26% 12%;
+  --card-foreground: 210 30% 93%;
+  --muted: 213 22% 16%;
+  --muted-foreground: 213 15% 65%;
+  --accent: 213 30% 18%;
+  --accent-foreground: 210 30% 93%;
+  --border: 213 20% 22%;
+  --input: 213 20% 22%;
+  --ring: 211 64% 65%;
+  --primary: 211 64% 65%;
+  --primary-foreground: 213 40% 10%;
+  --secondary: 213 22% 18%;
+  --secondary-foreground: 210 30% 93%;
+
+  --good: 149 45% 48%;
+  --warn: 40 65% 55%;
+  --crit: 6 70% 63%;
+  color-scheme: dark;
+}
+
+* { border-color: hsl(var(--border)); }
+body {
+  margin: 0;
+  background: hsl(var(--background));
+  color: hsl(var(--foreground));
+  font-family: '"IBM Plex Sans"', system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+.font-display { font-family: 'Archivo', system-ui, sans-serif; }
+.tnum { font-family: '"IBM Plex Mono"', ui-monospace, monospace; font-variant-numeric: tabular-nums; }
+
+/* Rich text written in the acquisition editor, and the stored HTML rendered back. */
+.prose-reply p { margin: 0 0 0.6em; }
+.prose-reply p:last-child { margin-bottom: 0; }
+.prose-reply ul, .prose-reply ol { margin: 0 0 0.6em; padding-left: 1.3em; }
+.prose-reply li { margin: 0.15em 0; }
+.prose-reply ul { list-style: disc; }
+.prose-reply ol { list-style: decimal; }
+.prose-reply blockquote {
+  margin: 0 0 0.6em;
+  padding-left: 0.9em;
+  border-left: 3px solid hsl(var(--border));
+  color: hsl(var(--muted-foreground));
+}
+.prose-reply b, .prose-reply strong { font-weight: 600; }
+.prose-reply a { color: hsl(var(--primary)); text-decoration: underline; }
