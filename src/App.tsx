@@ -14,8 +14,7 @@ export default function App() {
               </svg>
             </div>
             <div>
-              <div className="font-display text-[15px] font-bold leading-tight tracking-wide">Acquisition</div>
-              <div className="text-[11.5px] text-muted-foreground">DSOPS &middot; requirements gathering</div>
+              <div className="font-display text-[15px] font-bold leading-tight tracking-wide">Requirement Gathering System</div>
             </div>
           </div>
           <div className="flex-1" />

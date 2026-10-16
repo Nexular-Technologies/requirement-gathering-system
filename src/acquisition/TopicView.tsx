@@ -1,17 +1,32 @@
 import * as React from "react";
-import { ArrowLeft, Check, Loader2, Pencil, Plus, Target } from "lucide-react";
+import { ArrowLeft, Check, Loader2, Pencil, Plus, Search, Target, X } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input, Label, Select, Textarea } from "@/components/ui/input";
 import { api } from "./api";
-import type { TopicDetail, TopicStatus } from "./types";
+import type { Question, TopicDetail, TopicStatus } from "./types";
 import { statusVariant } from "./statusVariant";
 import { QuestionNode } from "./QuestionNode";
 
 interface Props {
   topicId: string;
   onBack: () => void;
+}
+
+/** Keeps a question if it or any of its descendants match; prunes children down to matching branches. */
+function filterQuestions(questions: Question[], query: string): Question[] {
+  const needle = query.trim().toLowerCase();
+  if (!needle) return questions;
+
+  const walk = (q: Question): Question | null => {
+    const children = q.children.map(walk).filter((c): c is Question => c !== null);
+    const matches = q.body.toLowerCase().includes(needle);
+    if (!matches && children.length === 0) return null;
+    return { ...q, children };
+  };
+
+  return questions.map(walk).filter((q): q is Question => q !== null);
 }
 
 export function TopicView({ topicId, onBack }: Props) {
@@ -21,6 +36,8 @@ export function TopicView({ topicId, onBack }: Props) {
   const [draft, setDraft] = React.useState({ title: "", objective: "", status: "open" as TopicStatus });
   const [newQuestion, setNewQuestion] = React.useState("");
   const [busy, setBusy] = React.useState(false);
+  const [modalOpen, setModalOpen] = React.useState(false);
+  const [searchQuery, setSearchQuery] = React.useState("");
 
   // Who the entries are attributed to. Kept locally until WP-12 brings real sessions.
   const [author, setAuthor] = React.useState(() => localStorage.getItem("dsops-acq-author") ?? "");
@@ -38,6 +55,15 @@ export function TopicView({ topicId, onBack }: Props) {
   }, [topicId]);
 
   React.useEffect(load, [load]);
+
+  React.useEffect(() => {
+    if (!modalOpen) return;
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setModalOpen(false);
+    };
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [modalOpen]);
 
   const saveTopic = async () => {
     setBusy(true);
@@ -58,6 +84,7 @@ export function TopicView({ topicId, onBack }: Props) {
     try {
       await api.createQuestion(topicId, { body: newQuestion.trim(), author: author || undefined });
       setNewQuestion("");
+      setModalOpen(false);
       load();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Could not add question");
@@ -65,6 +92,11 @@ export function TopicView({ topicId, onBack }: Props) {
       setBusy(false);
     }
   };
+
+  const filteredQuestions = React.useMemo(
+    () => (topic ? filterQuestions(topic.questions, searchQuery) : []),
+    [topic, searchQuery]
+  );
 
   if (!topic) {
     return (
@@ -155,34 +187,18 @@ export function TopicView({ topicId, onBack }: Props) {
         <div className="mt-3 rounded-md border border-crit/30 bg-crit/10 px-3.5 py-2.5 text-xs text-crit">{error}</div>
       )}
 
-      <Card className="mt-3">
-        <CardContent className="grid gap-2.5 p-5">
-          <div className="flex flex-wrap items-end gap-3">
-            <div className="min-w-[180px] flex-1">
-              <Label htmlFor="q-new">New question</Label>
-              <Textarea
-                id="q-new"
-                value={newQuestion}
-                onChange={(e) => setNewQuestion(e.target.value)}
-                placeholder="Ask something that refines or answers the objective above&hellip;"
-                className="min-h-[60px]"
-              />
-            </div>
-            <div className="w-48">
-              <Label htmlFor="q-author">Attributed to</Label>
-              <Input
-                id="q-author"
-                value={author}
-                onChange={(e) => setAuthor(e.target.value)}
-                placeholder="Your name"
-              />
-            </div>
-            <Button size="sm" onClick={addQuestion} disabled={busy || !newQuestion.trim()}>
-              {busy ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Plus className="h-3.5 w-3.5" />} Add
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
+      {topic.questions.length > 0 && (
+        <div className="relative mt-3">
+          <Search className="pointer-events-none absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
+          <Input
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            placeholder="Search questions in this topic&hellip;"
+            className="pl-9"
+            aria-label="Search questions"
+          />
+        </div>
+      )}
 
       {topic.questions.length === 0 ? (
         <Card className="mt-3">
@@ -190,11 +206,74 @@ export function TopicView({ topicId, onBack }: Props) {
             No questions on this topic yet.
           </CardContent>
         </Card>
+      ) : filteredQuestions.length === 0 ? (
+        <Card className="mt-3">
+          <CardContent className="p-8 text-center text-xs text-muted-foreground">
+            No questions match &ldquo;{searchQuery}&rdquo;.
+          </CardContent>
+        </Card>
       ) : (
         <div className="mt-3 grid gap-3">
-          {topic.questions.map((q) => (
+          {filteredQuestions.map((q) => (
             <QuestionNode key={q.id} question={q} depth={0} author={author} onChanged={load} />
           ))}
+        </div>
+      )}
+
+      <Button
+        size="icon"
+        onClick={() => setModalOpen(true)}
+        className="fixed bottom-6 right-6 z-40 h-12 w-12 rounded-full shadow-lg"
+        aria-label="Add question"
+      >
+        <Plus className="h-5 w-5" />
+      </Button>
+
+      {modalOpen && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4"
+          onMouseDown={(e) => {
+            if (e.target === e.currentTarget) setModalOpen(false);
+          }}
+        >
+          <Card className="w-full max-w-lg">
+            <CardContent className="grid gap-3.5 p-5">
+              <div className="flex items-center justify-between">
+                <h3 className="font-display text-[15px] font-bold tracking-tight">New question</h3>
+                <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => setModalOpen(false)}>
+                  <X className="h-3.5 w-3.5" />
+                </Button>
+              </div>
+              <div>
+                <Label htmlFor="q-new">Question</Label>
+                <Textarea
+                  id="q-new"
+                  autoFocus
+                  value={newQuestion}
+                  onChange={(e) => setNewQuestion(e.target.value)}
+                  placeholder="Ask something that refines or answers the objective above&hellip;"
+                  className="min-h-[90px]"
+                />
+              </div>
+              <div>
+                <Label htmlFor="q-author">Attributed to</Label>
+                <Input
+                  id="q-author"
+                  value={author}
+                  onChange={(e) => setAuthor(e.target.value)}
+                  placeholder="Your name"
+                />
+              </div>
+              <div className="flex justify-end gap-2">
+                <Button size="sm" variant="ghost" onClick={() => setModalOpen(false)}>
+                  Cancel
+                </Button>
+                <Button size="sm" onClick={addQuestion} disabled={busy || !newQuestion.trim()}>
+                  {busy ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Plus className="h-3.5 w-3.5" />} Add
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
         </div>
       )}
     </div>
